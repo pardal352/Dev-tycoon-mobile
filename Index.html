@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dev Tycoon Idle: Mobile Edition</title>
+    <style>
+        :root {
+            --bg-dark: #090a0f;
+            --bg-panel: #141722;
+            --bg-card: #1f2434;
+            --accent: #00f0ff;
+            --accent-glow: rgba(0, 240, 255, 0.3);
+            --text-main: #a2a8bc;
+            --text-light: #ffffff;
+            --green: #00ff66;
+            --red: #ff2a5f;
+            --gold: #ffcc00;
+            --purple: #bf55ec;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HUD SUPERIOR GIGANTE (UX MOBILE) */
+        .hud-top {
+            background: linear-gradient(to bottom, #0d0f16, var(--bg-panel));
+            padding: 12px 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            border-bottom: 2px solid rgba(0, 240, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .hud-item {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 4px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-light);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .hud-item span {
+            display: block;
+            color: var(--accent);
+            font-size: 0.95rem;
+            margin-top: 2px;
+            text-shadow: 0 0 6px var(--accent-glow);
+        }
+
+        .hud-sub-bar {
+            grid-column: span 3;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 6px;
+            font-size: 0.75rem;
+        }
+        .hud-sub-bar span { color: var(--text-light); }
+        .hud-sub-bar strong { color: var(--gold); }
+
+        /* VIEWPORT DE ROLAGEM MACIA (iOS/Android Smooth Scroll) */
+        .viewport {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 12px 100px 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: viewEnter 0.2s ease-out; }
+
+        @keyframes viewEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            border-left: 4px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        /* CARDS REATIVOS */
+        .card-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .row-card {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .card-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title { font-weight: bold; color: var(--text-light); font-size: 1.05rem; }
+        .card-sub { font-size: 0.75rem; color: var(--text-main); margin-top: 2px; }
+
+        /* BARRAS DE PROGRESSO DE FLUXO CONTÍNUO */
+        .progress-wrapper {
+            background: rgba(0,0,0,0.5);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .progress-core {
+            height: 100%;
+            background: linear-gradient(90deg, #0099ff, var(--accent));
+            width: 0%;
+        }
+
+        /* BOTÕES DE COLO GIGANTES PARA POLEGAR (TOUCH OPTIMIZED) */
+        .btn-action {
+            background: var(--green);
+            color: #020408;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 0 #00b347;
+            transition: all 0.1s;
+        }
+
+        .btn-action:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #00b347;
+        }
+
+        .btn-action:disabled {
+            background: #252b3a !important;
+            color: #555e75 !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        /* BADGES */
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .b-comum { background: #4a5568; color: #fff; }
+        .b-raro { background: #3182ce; color: #fff; }
+        .b-epico { background: var(--purple); color: #fff; }
+
+        /* MENU DE NAVEGAÇÃO NA BASE DA TELA (MOBILE NAV) */
+        .nav-bottom {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 75px;
+            background: #0d0f16;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.65rem;
+            font-weight: bold;
+            gap: 5px;
+            height: 100%;
+        }
+
+        .nav-item-icon { font-size: 1.4rem; transition: transform 0.2s; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item.active .nav-item-icon { transform: scale(1.15); }
+
+        /* MODAIS E ALERTAS POPUP DO SMARTPHONE */
+        .toast {
+            position: fixed;
+            top: 25px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 23, 34, 0.96);
+            border: 1px solid var(--accent);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            color: #fff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(5,6,9,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .modal-title { font-size: 1.3rem; color: #fff; margin-bottom: 12px; }
+        .modal-body { font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- HUD FIXO SUPERIOR -->
+    <header class="hud-top">
+        <div class="hud-item">💵 Dinheiro<span id="h-money">R$ 0</span></div>
+        <div class="hud-item">💡 Criatividade<span id="h-creative">0</span></div>
+        <div class="hud-item">💻 Tecnologia<span id="h-tech">0</span></div>
+        <div class="hud-sub-bar">
+            <div>⭐ Fama: <strong id="h-fame">0</strong></div>
+            <div>👑 Legado: <strong id="h-legacy">0</strong></div>
+            <div>🏢 QG: <strong id="h-stage">Quarto Gamer</strong></div>
+        </div>
+    </header>
+
+    <!-- VIEWPORT DIRECIONADOR DE CONTEÚDO (SCROLL) -->
+    <main class="viewport">
+        
+        <!-- ABA: DEPARTAMENTOS -->
+        <div id="view-depts" class="tab-content active">
+            <h2>🏢 Departamentos Operacionais</h2>
+            <div class="card-list" id="dom-depts"></div>
+        </div>
+
+        <!-- ABA: EQUIPE -->
+        <div id="view-staff" class="tab-content">
+            <h2>👥 Profissionais & Especialistas</h2>
+            <div class="card-list" id="dom-staff"></div>
+        </div>
+
+        <!-- ABA: JOGOS -->
+        <div id="view-games" class="tab-content">
+            <h2>🎮 Estúdio de Produção</h2>
+            <div class="card-list" id="dom-games"></div>
+        </div>
+
+        <!-- ABA: PESQUISA -->
+        <div id="view-research" class="tab-content">
+            <h2>🔬 Laboratório de P&D</h2>
+            <div class="card-list" id="dom-research"></div>
+        </div>
+
+        <!-- ABA: PRESTÍGIO -->
+        <div id="view-prestige" class="tab-content">
+            <h2>👑 Reiniciar Linha do Tempo (Prestígio)</h2>
+            <div class="row-card" style="text-align: center; gap: 15px; padding: 25px 15px;">
+                <p>Venda todo o seu estúdio atual e patentes para recomeçar com investimentos pesados de mercado.</p>
+                <div style="font-size: 1.2rem; font-weight: bold; color: var(--gold);">
+                    Você receberá: <span id="p-reward" style="color: var(--green);">+0</span> 👑 Legado
+                </div>
+                <p style="font-size: 0.75rem;">Cada ponto de Legado garante permanentemente +100% de produção global.</p>
+                <button class="btn-action" style="background: var(--purple); color:#fff; box-shadow: 0 4px 0 #8e44ad;" id="action-prestige">
+                    <span>Vender Empresa Agora</span> <span>🚀</span>
+                </button>
+            </div>
+            <button id="action-hard-reset" style="background: transparent; color: var(--red); border: none; font-size: 0.75rem; margin-top: 40px; display: block; width: 100%; text-align: center;">Apagar Todo o Progresso Permanentemente</button>
+        </div>
+
+    </main>
+
+    <!-- ABAS DA BASE (ESTILO SMARTPHONE NATIVO) -->
+    <nav class="nav-bottom">
+        <button class="nav-item active" data-target="view-depts"><div class="nav-item-icon">🏢</div>Empresa</button>
+        <button class="nav-item" data-target="view-staff"><div class="nav-item-icon">👥</div>Equipe</button>
+        <button class="nav-item" data-target="view-games"><div class="nav-item-icon">🎮</div>Jogos</button>
+        <button class="nav-item" data-target="view-research"><div class="nav-item-icon">🔬</div>Tech</button>
+        <button class="nav-item" data-target="view-prestige"><div class="nav-item-icon">👑</div>Prestígio</button>
+    </nav>
+
+    <!-- POPUPS AUTOMÁTICOS -->
+    <div id="dom-toast" class="toast hidden"></div>
+
+    <div id="dom-modal-offline" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-title">Relatório de Ausência 🛌</div>
+            <div class="modal-body" id="dom-modal-text"></div>
+            <button class="btn-action" style="width: 100%;" id="action-close-modal"><span>Coletar Lucros</span> <span>💵</span></button>
+        </div>
+    </div>
+
+    <!-- ENGINE CODE LOGIC -->
+    <script>
+        // 1. DATA E CONFIGURAÇÃO MATEMÁTICA EXPONENCIAL
+        const DATA = {
+            STAGES: [
+                { name: "Quarto Gamer", tier: 0 },
+                { name: "Escritório Compartilhado", tier: 10000 },
+                { name: "Pequeno Estúdio", tier: 250000 },
+                { name: "Grande Estúdio", tier: 8000000 },
+                { name: "Campus Tecnológico", tier: 500000000 },
+                { name: "Megacorporação Global", tier: 100000000000 }
+            ],
+            DEPTS: [
+                { id: "d_dev", name: "Desenvolvimento", cost: 10, prod: 1, scale: 1.15, type: "money" },
+                { id: "d_art", name: "Arte & Design", cost: 140, prod: 9, scale: 1.16, type: "money" },
+                { id: "d_mkt", name: "Marketing Digital", cost: 1500, prod: 5, scale: 1.18, type: "creative" },
+                { id: "d_res", name: "Pesquisa & IA", cost: 18000, prod: 12, scale: 1.21, type: "tech" }
+            ],
+            STAFF: [
+                { id: "s_p1", name: "Programador Jr", cost: 250, target: "d_dev", bonus: 2.0, rarity: "comum" },
+                { id: "s_a1", name: "Artista Técnico", cost: 2000, target: "d_art", bonus: 2.5, rarity: "raro" },
+                { id: "s_g1", name: "Gerente Operacional", cost: 75000, target: "all", bonus: 1, rarity: "epico", auto: true }
+            ],
+            GAMES: [
+                { id: "g_puz", name: "Jogo de Puzzle Casual", cost: 8, reward: 1200, fame: 8 },
+                { id: "g_rpg", name: "RPG de Turnos Retro", cost: 60, reward: 15000, fame: 45 },
+                { id: "g_aaa", name: "MMO de Mundo Aberto AAA", cost: 500, reward: 450000, fame: 600 }
+            ],
+            RESEARCH: [
+                { id: "r_eng", name: "Engine Modular Avançada", cost: 40, target: "money", bonus: 1.5, desc: "+50% Ganhos em Dinheiro" },
+                { id: "r_spd", name: "Compilação Nuvem", cost: 250, target: "speed", bonus: 1.3, desc: "+30% Velocidade Operacional" }
+            ]
+        };
+
+        // 2. ESTADO DO JOGO REGENERATIVO
+        let game = {
+            money: 30, creative: 0, tech: 0, fame: 0, legacy: 0, totalMoneyEarned: 30,
+            depts: { d_dev: 0, d_art: 0, d_mkt: 0, d_res: 0 },
+            progress: { d_dev: 0, d_art: 0, d_mkt: 0, d_res: 0 },
+            staff: {}, research: {}, lastTick: Date.now()
+        };
+
+        // 3. ABREVIAÇÃO DE NÚMEROS DE ALTA PERFORMANCE (PADRÃO IDLE OIL TYCOON)
+        function format(num) {
+            if (num === undefined || isNaN(num)) return "0";
+            if (num < 1000) return num.toFixed(1).replace(".", ",");
+            const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi"];
+            const i = Math.floor(Math.log10(num) / 3);
+            return (num / Math.pow(10, i * 3)).toFixed(2).replace(".", ",") + " " + suffixes[i];
+        }
+
+        // 4. LOOP CENTRAL DE ATUALIZAÇÃO (TICKER ENGINE)
+        function updateCore() {
+            const now = Date.now();
+            const delta = (now - game.lastTick) / 1000;
+            game.lastTick = now;
+
+            // Processa produção passiva contínua
+            DATA.DEPTS.forEach(d => {
+                const level = game.depts[d.id] || 0;
+                if (level > 0) {
+                    let speed = 0.5 * (1 + level * 0.04);
+                    if (game.research["r_spd"]) speed *= 1.3; // Aplica upgrade de velocidade
+
+                    game.progress[d.id] += delta * speed;
+                    if (game.progress[d.id] >= 1) {
+                        const chunks = Math.floor(game.progress[d.id]);
+                        game.progress[d.id] -= chunks;
+
+                        let payout = d.prod * level * chunks;
+                        
+                        // Modificadores de Funcionários / Equipe
+                        if (game.staff[d.id] || game.staff["all"]) {
+                            const staffBonus = DATA.STAFF.filter(s => game.staff[s.id] && (s.target === d.id || s.target === "all"));
+                            staffBonus.forEach(s => payout *= s.bonus);
+                        }
+
+                        // Modificadores de Pesquisa Domada
+                        DATA.RESEARCH.forEach(r => {
+                            if (game.research[r.id] && r.target === d.type) payout *= r.bonus;
+                        });
+
+                        // Modificadores de Legado Permanente e Fama
+                        payout *= (1 + game.legacy * 1.0);
+                        payout *= (1 + game.fame * 0.01);
+
+                        // Depósito de Ativos
+                        if (d.type === "money") { game.money += payout; game.totalMoneyEarned += payout; }
+                        else if (d.type === "creative") { game.creative += payout; }
+                        else if (d.type === "tech") { game.tech += payout; }
+                    }
+                }
+            });
+
+            renderHTML();
+        }
+
+        // 5. MOTOR DE INJEÇÃO VISUAL (RENDER)
+        function renderHTML() {
+            // Recursos do Cabeçalho Global
+            document.getElementById("h-money").innerText = "R$ " + format(game.money);
+            document.getElementById("h-creative").innerText = format(game.creative);
+            document.getElementById("h-tech").innerText = format(game.tech);
+            document.getElementById("h-fame").innerText = format(game.fame);
+            document.getElementById("h-legacy").innerText = format(game.legacy);
+
+            // Estágio do QG atual baseado em faturamento histórico
+            let currentStage = DATA.STAGES[0].name;
+            DATA.STAGES.forEach(s => { if (game.totalMoneyEarned >= s.tier) currentStage = s.name; });
+            document.getElementById("h-stage").innerText = currentStage;
+
+            // Injeção Preguiçosa Inteligente (Lazy Rendering) - Constrói os elementos HTML uma única vez
+            buildCardsOnce();
+
+            // Atualização contínua de status das barras de progresso e botões
+            DATA.DEPTS.forEach(d => {
+                const lvl = game.depts[d.id] || 0;
+                const cost = d.cost * Math.pow(d.scale, lvl);
+                
+                document.getElementById(`val-${d.id}`).innerText = `Nív: ${lvl} (+${format(d.prod * lvl)}/s)`;
+                document.getElementById(`cost-${d.id}`).innerText = "R$ " + format(cost);
+                document.getElementById(`btn-${d.id}`).disabled = game.money < cost;
+                document.getElementById(`fill-${d.id}`).style.width = (lvl > 0 ? game.progress[d.id] * 100 : 0) + "%";
+            });
+
+            // Atualiza estado de compra dos funcionários
+            DATA.STAFF.forEach(s => {
+                const btn = document.getElementById(`btn-st-${s.id}`);
+                if (game.staff[s.id]) {
+                    btn.disabled = true; btn.innerText = "Contratado";
+                } else {
+                    btn.disabled = game.money < s.cost;
+                }
+            });
+
+            // Atualiza estado de compra do laboratório de pesquisas
+            DATA.RESEARCH.forEach(r => {
+                const btn = document.getElementById(`btn-res-${r.id}`);
+                if (game.research[r.id]) {
+                    btn.disabled = true; btn.innerText = "Pesquisado";
+                } else {
+                    btn.disabled = game.tech < r.cost;
+                }
+            });
+
+            // Atualiza lançamentos de jogos próprios
+            DATA.GAMES.forEach(g => {
+                document.getElementById(`btn-g-${g.id}`).disabled = game.creative < g.cost;
+            });
+
+            // Monitor de Prestígio em tempo real
+            const legacyCalc = Math.floor(Math.sqrt(game.totalMoneyEarned / 4000));
+            document.getElementById("p-reward").innerText = legacyCalc;
+        }
+
+        function buildCardsOnce() {
+            const containerDepts = document.getElementById("dom-depts");
+            if (containerDepts.children.length === 0) {
+                DATA.DEPTS.forEach(d => {
+                    containerDepts.innerHTML += `
+                        <div class="row-card">
+                            <div class="card-header-info">
+                                <div><div class="card-title">${d.name}</div><div class="card-sub" id="val-${d.id}">Nív: 0</div></div>
+                                <span class="badge b-comum">${d.type}</span>
+                            </div>
+                            <div class="progress-wrapper"><div class="progress-core" id="fill-${d.id}"></div></div>
+                            <button class="btn-action" id="btn-${d.id}" onclick="buyDept('${d.id}')"><span>Evoluir Setor</span> <span id="cost-${d.id}">$0</span></button>
+                        </div>`;
+                });
+            }
+
+            const containerStaff = document.getElementById("dom-staff");
+            if (containerStaff.children.length === 0) {
+                DATA.STAFF.forEach(s => {
+                    containerStaff.innerHTML += `
+                        <div class="row-card">
+                            <div class="card-header-info">
+                                <div><div class="card-title">${s.name}</div><div class="card-sub">Efeito: Multiplica ganhos de ${s.target === 'all' ? 'Tudo' : s.target} em ${s.bonus}x</div></div>
+                                <span class="badge b-${s.rarity}">${s.rarity}</span>
+                            </div>
+                            <button class="btn-action" id="btn-st-${s.id}" onclick="buyStaff('${s.id}')"><span>Contratar Talentos</span> <span>R$ ${format(s.cost)}</span></button>
+                        </div>`;
+                });
+            }
+
+            const containerGames = document.getElementById("dom-games");
+            if (containerGames.children.length === 0) {
+                DATA.GAMES.forEach(g => {
+                    containerGames.innerHTML += `
+                        <div class="row-card">
+                            <div class="card-header-info">
+                                <div><div class="card-title">${g.name}</div><div class="card-sub">Gasta: ${g.cost} Criatividade</div></div>
+                            </div>
+                            <button class="btn-action" style="background:var(--accent); color:#000; box-shadow: 0 4px 0 var(--accent-dark);" id="btn-g-${g.id}" onclick="publishGame('${g.id}')"><span>Lançar no Mercado</span> <span>+R$ ${format(g.reward)}</span></button>
+                        </div>`;
+                });
+            }
+
+            const containerResearch = document.getElementById("dom-research");
+            if (containerResearch.children.length === 0) {
+                DATA.RESEARCH.forEach(r => {
+                    containerResearch.innerHTML += `
+                        <div class="row-card">
+                            <div class="card-header-info">
+                                <div><div class="card-title">${r.name}</div><div class="card-sub">${r.desc}</div></div>
+                            </div>
+                            <button class="btn-action" style="background:var(--gold); color:#000; box-shadow: 0 4px 0 #b38f00;" id="btn-res-${r.id}" onclick="buyResearch('${r.id}')"><span>Pesquisar</span> <span>💻 ${r.cost}</span></button>
+                        </div>`;
+                });
+            }
+        }
+
+        // 6. AÇÕES DE UPGRADES DO JOGADOR
+        function buyDept(id) {
+            const d = DATA.DEPTS.find(x => x.id === id);
+            const cost = d.cost * Math.pow(d.scale, game.depts[id] || 0);
+            if (game.money >= cost) {
+                game.money -= cost;
+                game.depts[id] = (game.depts[id] || 0) + 1;
+                popToast(`🚀 Setor ${d.name} expandido!`);
+            }
+        }
+
+        function buyStaff(id) {
+            const s = DATA.STAFF.find(x => x.id === id);
+            if (game.money >= s.cost && !game.staff[id]) {
+                game.money -= s.cost;
+                game.staff[id] = true;
+                popToast(`👤 Profissional Contratado!`);
+            }
+        }
+
+        function buyResearch(id) {
+            const r = DATA.RESEARCH.find(x => x.id === id);
+            if (game.tech >= r.cost && !game.research[id]) {
+                game.tech -= r.cost;
+                game.research[id] = true;
+                popToast(`🔬 Nova tecnologia integrada!`);
+            }
+        }
+
+        function publishGame(id) {
+            const g = DATA.GAMES.find(x => x.id === id);
+            if (game.creative >= g.cost) {
+                game.creative -= g.cost;
+                game.money += g.reward;
+                game.fame += g.fame;
+                popToast(`🎮 Jogo lançado! Fama aumentada em +${g.fame}.`);
+            }
+        }
+
+        // 7. SISTEMA DE PRESTÍGIO (REINÍCIO DO IMPÉRIO)
+        document.getElementById("action-prestige").onclick = () => {
+            const pending = Math.floor(Math.sqrt(game.totalMoneyEarned / 4000));
+            if (pending < 1) {
+                popToast("❌ Faturamento insuficiente para gerar legado comercial.");
+                return;
+            }
+
+            game.legacy += pending;
+            game.money = 30;
+            game.creative = 0;
+            game.tech = 0;
+            game.fame = 0;
+            game.totalMoneyEarned = 30;
+            DATA.DEPTS.forEach(d => { game.depts[d.id] = 0; game.progress[d.id] = 0; });
+            game.staff = {};
+            game.research = {};
+            
+            popToast("👑 Estúdio vendido! Produção global massivamente multiplicada.");
+        };
+
+        // 8. GANHOS PASSIVOS AUTOMÁTICOS OFFLINE DO LOCALSTORAGE
+        function checkOfflineEarnings() {
+            const saved = localStorage.getItem("dev_tycoon_save_mobile");
+            if (saved) {
+                game = JSON.parse(saved);
+                const offlineMs = Date.now() - game.lastTick;
+                if (offlineMs > 15000) { // Mais de 15 segundos fora do jogo
+                    const seconds = offlineMs / 1000;
+                    let accumulatedMoney = 0;
+
+                    DATA.DEPTS.forEach(d => {
+                        const lvl = game.depts[d.id] || 0;
+                        if (lvl > 0 && d.type === "money") {
+                            let r = d.prod * lvl * seconds * 0.50; // Eficiência de 50% em background offline
+                            if (game.staff[d.id]) r *= 2;
+                            r *= (1 + game.legacy * 1.0);
+                            accumulatedMoney += r;
+                        }
+                    });
+
+                    if (accumulatedMoney > 0) {
+                        game.money += accumulatedMoney;
+                        game.totalMoneyEarned += accumulatedMoney;
+                        document.getElementById("dom-modal-text").innerHTML = `Seus gerentes operaram em modo de baixo consumo por <strong>${Math.floor(seconds)} segundos</strong> e trouxeram de volta:<br><br><span style='color:var(--green); font-size:1.2rem; font-weight:bold;'>R$ ${format(accumulatedMoney)}</span>`;
+                        document.getElementById("dom-modal-offline").classList.remove("hidden");
+                    }
+                }
+            }
+            game.lastTick = Date.now();
+        }
+
+        // 9. EVENTOS AUXILIARES E SELEÇÃO DE ABAS MOBILE
+        document.querySelectorAll(".nav-item").forEach(btn => {
+            btn.onclick = (e) => {
+                document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(v => v.classList.remove("active"));
+                
+                e.currentTarget.classList.add("active");
+                document.getElementById(e.currentTarget.dataset.target).classList.add("active");
+            };
+        });
+
+        document.getElementById("action-close-modal").onclick = () => {
+            document.getElementById("dom-modal-offline").classList.add("hidden");
+        };
+
+        document.getElementById("action-hard-reset").onclick = () => {
+            if (confirm("Deletar empresa e apagar backups permanentes da nuvem local?")) {
+                localStorage.removeItem("dev_tycoon_save_mobile");
+                location.reload();
+            }
+        };
+
+        function popToast(msg) {
+            const t = document.getElementById("dom-toast");
+            t.innerText = msg; t.classList.remove("hidden");
+            setTimeout(() => t.classList.add("hidden"), 2000);
+        }
+
+        // AUTO-SAVE DE SEGURANÇA MOBILE (CADA 3 SEGUNDOS)
+        setInterval(() => {
+            localStorage.setItem("dev_tycoon_save_mobile", JSON.stringify(game));
+        }, 3000);
+
+        // START ENGINE
+        checkOfflineEarnings();
+        setInterval(updateCore, 100);
+    </script>
+</body>
+</html>
